@@ -1,6 +1,22 @@
-import requests
-import re
-import time
+
+import time, re, requests
+from html.parser import HTMLParser
+
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.strict = False
+        self.convert_charrefs = True
+        self.fed = []
+
+    def handle_data(self, d):
+        self.fed.append(d)
+
+    def get_data(self):
+        return ''.join(self.fed)
+
 
 # base url to fetch text corpus from
 base = 'http://www.paulgraham.com/'
@@ -37,14 +53,12 @@ for i, link in enumerate(links):
             res, re.DOTALL
         )
 
-    # having fetched the essay content, replace the <br> tags with newline character tags in Python so as to
-    # maintain the line break characteristics in our essay
-    filter_words = ['<center>_____</center>', '<a href="(.*)">', '<u>', '</u>', '</a>', '<b>', '</b>', '<i>', '</i>']
+    article = article[0].rstrip()
     try:
-        article = article[0].replace('<br>', '\n')  # replacing <br> tags with new line tags
-
-        for ft in filter_words:
-            article = re.sub(ft, '', article)
+        article = article.replace('<br>', '\n')  # replacing <br> tags with new line tags
+        s = MLStripper()
+        s.feed(article)
+        article = s.get_data()
 
         article += '\n'  # finally append new line character into our article
 
@@ -53,5 +67,6 @@ for i, link in enumerate(links):
             f.write(article)
         print(i + 1, '. Text taken from: ', link)
 
+        # print(article)
     except IndexError:
         print(i + 1, '. Could not get text from: ', link)
