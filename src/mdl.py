@@ -217,7 +217,7 @@ class LSTM:
                                                   c_bar[t], c[t], o[t], h[t])
         return loss, h[self.seq_len - 1], c[self.seq_len - 1]
 
-    def gradient_check(self, x, y, h_prev, c_prev, num_checks=10, delta=1e-6):
+    def gradient_check(self, x, y, h_prev, c_prev, num_checks=10, delta=1e-4):
         """
         Checks the magnitude of gradients against expected approximate values
         """
@@ -272,7 +272,7 @@ class LSTM:
         """
         J = []  # to store losses
 
-        num_batches = len(X) // self.seq_len
+        num_batches = len(X) // self.seq_len      # chars / seq
         X_trimmed = X[: num_batches * self.seq_len]  # trim input to have full sequences
 
         for epoch in range(self.epochs):
