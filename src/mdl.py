@@ -3,7 +3,7 @@ from random import uniform
 
 
 class LSTM:
-    def __init__(self, char_to_idx, idx_to_char, vocab_size, n_h=100, seq_len=25,
+    def __init__(self, char_to_idx, idx_to_char, vocab_size, n_h=100, seq_len=500,
                  epochs=10, lr=0.001, beta1=0.9, beta2=0.999):
         """
         Implementation of simple character-level LSTM using Numpy
