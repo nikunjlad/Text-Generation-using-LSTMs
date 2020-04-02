@@ -52,7 +52,7 @@ char_to_idx = {w: i for i, w in enumerate(chars)}
 idx_to_char = {i: w for i, w in enumerate(chars)}
 
 # train the model
-model = LSTM(char_to_idx, idx_to_char, vocab_size, epochs=100, lr=0.0005)
+model = LSTM(char_to_idx, idx_to_char, vocab_size, epochs=10, lr=0.05)
 J, params = model.train(data)
 
 # plot the results
