@@ -3,19 +3,24 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class RNNModel(nn.Module):
     """Container module with an encoder, a recurrent module, and a decoder."""
 
     def __init__(self, rnn_type, ntoken, ninp, nhid, nlayers, dropout=0.5, tie_weights=False):
         super(RNNModel, self).__init__()
-        self.ntoken = ntoken
-        self.drop = nn.Dropout(dropout)
-        self.encoder = nn.Embedding(ntoken, ninp)
+        self.ntoken = ntoken  # number of unique words in vocabulary.
+        self.drop = nn.Dropout(dropout)  # define the dropout layer with 50% regularization
+
+        # embedding a high dimensional word space from 32929 to 200 hidden layers and with total of 2 layers.
+        self.encoder = nn.Embedding(ntoken, ninp)   # ntoken = 32929 and embed size = 200
+
+        # if network architecture is LSTM or GRU then,
         if rnn_type in ['LSTM', 'GRU']:
-            self.rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout)
+            self.rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout)   #
         else:
             try:
-                nonlinearity = {'RNN_TANH': 'tanh', 'RNN_RELU': 'relu'}[rnn_type]
+                nonlinearity = {'RNN_TANH': 'tanh', 'RNN_RELU': 'relu'}[rnn_type]  # select non linearity from dict
             except KeyError:
                 raise ValueError("""An invalid option for `--model` was supplied,
                                  options are ['LSTM', 'GRU', 'RNN_TANH' or 'RNN_RELU']""")
