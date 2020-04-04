@@ -53,11 +53,13 @@ for i, link in enumerate(links):
             res, re.DOTALL
         )
 
-    article = article[0].rstrip()
+    article = article[0].rstrip()  # strip out white spaces from the end of the line in the article.
+
+    # formatting the articles by replacing HTML tags with string equivalent objects
     try:
         article = article.replace('<br>', '\n')  # replacing <br> tags with new line tags
-        s = MLStripper()
-        s.feed(article)
+        s = MLStripper()    # creating a stripper object to strip away all (or most) of the HTML tags present in the text
+        s.feed(article)  # feed the article
         article = s.get_data()
 
         article += '\n'  # finally append new line character into our article

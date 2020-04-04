@@ -6,9 +6,12 @@ import os
 import torch
 import torch.nn as nn
 import torch.onnx
-
 import data
 import model
+
+###############################################################################
+# Parsing command line arguments
+###############################################################################
 
 parser = argparse.ArgumentParser(description='PyTorch Wikitext-2 RNN/LSTM/GRU/Transformer Language Model')
 parser.add_argument('--data', type=str, default='./data/paul_graham',
@@ -49,7 +52,8 @@ parser.add_argument('--onnx-export', type=str, default='',
 parser.add_argument('--nhead', type=int, default=2,
                     help='the number of heads in the encoder/decoder of the transformer model')
 
-args = parser.parse_args()
+args = parser.parse_args()   # get argument parser object
+
 
 # Set the random seed manually for reproducibility.
 torch.manual_seed(args.seed)
@@ -57,7 +61,7 @@ if torch.cuda.is_available():
     if not args.cuda:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-device = torch.device("cuda" if args.cuda else "cpu")
+device = torch.device("cuda" if args.cuda else "cpu")   # set to cuda if using cuda or use the cpu
 
 ###############################################################################
 # Load data
@@ -95,7 +99,7 @@ test_data = batchify(corpus.test, eval_batch_size)
 # Build the model
 ###############################################################################
 
-ntokens = len(corpus.dictionary)
+ntokens = len(corpus.dictionary)     # size of the vocabulary
 if args.model == 'Transformer':
     model = model.TransformerModel(ntokens, args.emsize, args.nhead, args.nhid, args.nlayers, args.dropout).to(device)
 else:

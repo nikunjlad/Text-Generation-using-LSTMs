@@ -3,7 +3,9 @@ from mdl import LSTM
 
 
 def rnn_chars():
-    data = open('paul_graham_essay.txt').read().lower()
+    # load Paul Graham essays dataset. Paul Graham is a computer scientist.
+    # He is an investor in startups and has a startup incubator named Y Combinator.
+    data = open('paul_graham_essay.txt').read().lower()   # read all the data
     chars = set(data)
     vocab_size = len(chars)
     print('data has %d characters, %d unique' % (len(data), vocab_size))
@@ -52,7 +54,7 @@ char_to_idx = {w: i for i, w in enumerate(chars)}
 idx_to_char = {i: w for i, w in enumerate(chars)}
 
 # train the model
-model = LSTM(char_to_idx, idx_to_char, vocab_size, epochs=100, lr=0.0005)
+model = LSTM(char_to_idx, idx_to_char, vocab_size, epochs=10, lr=0.05)
 J, params = model.train(data)
 
 # plot the results
