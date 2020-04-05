@@ -38,17 +38,18 @@ class RNNModel(nn.Module):
                 raise ValueError('When using the tied flag, nhid must be equal to emsize')
             self.decoder.weight = self.encoder.weight
 
-        self.init_weights()
+        self.init_weights()    # initialize model weights
 
-        self.rnn_type = rnn_type
-        self.nhid = nhid
-        self.nlayers = nlayers
+        self.rnn_type = rnn_type  # specify the type of network architecture to use.
+        self.nhid = nhid   # number of hidden layer neurons to have, nhid = 200
+        self.nlayers = nlayers    # number of layers in the network, 2 layers
 
     def init_weights(self):
         initrange = 0.1
+        # randomly initialize embedding weights between -0.1 to 0.1
         self.encoder.weight.data.uniform_(-initrange, initrange)
-        self.decoder.bias.data.zero_()
-        self.decoder.weight.data.uniform_(-initrange, initrange)
+        self.decoder.bias.data.zero_()   # initialize bias with 0's
+        self.decoder.weight.data.uniform_(-initrange, initrange)   # initialize decoder weights between -0.1 to 0.1
 
     def forward(self, input, hidden):
         emb = self.drop(self.encoder(input))

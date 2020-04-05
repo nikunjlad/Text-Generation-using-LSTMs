@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.onnx
 import data
 import model
+import matplotlib.pyplot as plt
 
 ###############################################################################
 # Parsing command line arguments
@@ -48,6 +49,8 @@ parser.add_argument('--save', type=str, default='model.pt',
                     help='path to save the final model')
 parser.add_argument('--onnx-export', type=str, default='',
                     help='path to export the final model in onnx format')
+parser.add_argument('--plt-name', type=str, default='',
+                    help='path to export the loss curve plots')
 
 parser.add_argument('--nhead', type=int, default=2,
                     help='the number of heads in the encoder/decoder of the transformer model')
@@ -85,24 +88,32 @@ corpus = data.Corpus(args.data)
 def batchify(data, bsz):
     # Work out how cleanly we can divide the dataset into bsz parts.
     nbatch = data.size(0) // bsz
+    print("Data size: {}, batch size: {}".format(str(data.size(0)), str(bsz)))
+    print("Number of batches: {}".format(str(nbatch)))
     # Trim off any extra elements that wouldn't cleanly fit (remainders).
     data = data.narrow(0, 0, nbatch * bsz)
+    print("Trimmed data shape: {}".format(str(data.shape)))
     # Evenly divide the data across the bsz batches.
     data = data.view(bsz, -1).t().contiguous()
+    print()
     return data.to(device)
 
 
 # we want to have a sequence of length 10 for the validation and the test dataset and of length 20 for training dataset
 eval_batch_size = 10
 train_data = batchify(corpus.train, args.batch_size)
+print("Training data shape: {}".format(str(train_data.shape)))
 val_data = batchify(corpus.valid, eval_batch_size)
+print("Validation data shape: {}".format(str(val_data.shape)))
 test_data = batchify(corpus.test, eval_batch_size)
+print("Testing data shape: {}".format(str(test_data.shape)))
 
 ###############################################################################
 # Build the model
 ###############################################################################
 
 ntokens = len(corpus.dictionary)  # size of the vocabulary
+print("Size of vocabulary: {}".format(str(ntokens)))
 if args.model == 'Transformer':
     model = model.TransformerModel(ntokens, args.emsize, args.nhead, args.nhid, args.nlayers, args.dropout).to(device)
 else:
@@ -110,6 +121,9 @@ else:
         device)
 
 criterion = nn.NLLLoss()
+
+print("Encoder shape: {}".format(str(model.encoder.weight.shape)))
+print("Decoder shape: {}".format(str(model.decoder.weight.shape)))
 
 
 ###############################################################################
@@ -135,6 +149,17 @@ def repackage_hidden(h):
 # by the batchify function. The chunks are along dimension 0, corresponding
 # to the seq_len dimension in the LSTM.
 
+def plot_curves(tr_loss, val_loss, epochs):
+    epochs_list = [i + 1 for i in range(epochs)]
+    plt.plot(tr_loss, epochs_list, color='blue', label="Training loss")
+    plt.plot(val_loss, epochs_list, color='green', label="Validation loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.title("Train-Valid Loss Curves")
+    plt.legend()
+    plt.savefig(args.plt_name)
+
+
 def get_batch(source, i):
     seq_len = min(args.bptt, len(source) - 1 - i)
     data = source[i:i + seq_len]
@@ -148,7 +173,7 @@ def evaluate(data_source):
     total_loss = 0.
     ntokens = len(corpus.dictionary)
     if args.model != 'Transformer':
-        hidden = model.init_hidden(eval_batch_size)
+        hidden = model.init_hidden(eval_batch_size)  # if transformer model is not there then initialize weights
     with torch.no_grad():
         for i in range(0, data_source.size(0) - 1, args.bptt):
             data, targets = get_batch(data_source, i)
@@ -164,12 +189,17 @@ def evaluate(data_source):
 
 def train():
     # Turn on training mode which enables dropout.
-    model.train()
-    total_loss = 0.
-    start_time = time.time()
-    ntokens = len(corpus.dictionary)
+    model.train()  # train the model
+    total_loss = 0.  # initialize total loss of the epoch to 0
+    start_time = time.time()  # start the time initially for the batch calculation
+    ntokens = len(corpus.dictionary)  # vocabulary length /// SAME
+
+    # if model is not a Transformer, initialize hidden weights
     if args.model != 'Transformer':
         hidden = model.init_hidden(args.batch_size)
+        print("Hidden layer shape: {}".format(str(hidden[0].shape)))
+
+    count = 0
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
         data, targets = get_batch(train_data, i)
         # Starting each batch, we detach the hidden state from how it was previously produced.
@@ -201,6 +231,10 @@ def train():
             total_loss = 0
             start_time = time.time()
 
+        count += 1
+
+    return total_loss / count
+
 
 def export_onnx(path, batch_size, seq_len):
     print('The model is also exported in ONNX format at {}'.
@@ -212,15 +246,19 @@ def export_onnx(path, batch_size, seq_len):
 
 
 # Loop over epochs.
-lr = args.lr
-best_val_loss = None
+lr = args.lr  # learning rate
+best_val_loss = None  # best validation loss
 
 # At any point you can hit Ctrl + C to break out of training early.
 try:
+    train_loss = list()
+    valid_loss = list()
+    ct = 0
     for epoch in range(1, args.epochs + 1):
-        epoch_start_time = time.time()
-        train()
+        epoch_start_time = time.time()  # start the time for the epoch run
+        train_loss.append(train())  # call the training function and append the avg loss of epoch over batches in a list
         val_loss = evaluate(val_data)
+        valid_loss.append(val_loss)
         print('-' * 89)
         print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
               'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
@@ -234,6 +272,11 @@ try:
         else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             lr /= 4.0
+
+        ct += 1
+        if ct >= 10:
+            break
+    plot_curves(train_loss, valid_loss, 10)
 except KeyboardInterrupt:
     print('-' * 89)
     print('Exiting from training early')
@@ -245,7 +288,7 @@ with open(args.save, 'rb') as f:
     # this makes them a continuous chunk, and will speed up forward pass
     # Currently, only rnn model supports flatten_parameters function.
     if args.model in ['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU']:
-        model.rnn.flatten_parameters()
+        model.rnn.flatten_parameters()  #
 
 # Run on test data.
 test_loss = evaluate(test_data)
