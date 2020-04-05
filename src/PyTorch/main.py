@@ -274,6 +274,7 @@ try:
         else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             lr /= 4.0
+
         ct += 1
     plot_curves(train_loss, valid_loss, args.epochs)   # plot the loss curves against the epochs
 except KeyboardInterrupt:
