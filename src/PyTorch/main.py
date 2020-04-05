@@ -1,5 +1,4 @@
 # coding: utf-8
-from matplotlib import pyplot as plt
 import argparse
 import time
 import math
@@ -11,6 +10,7 @@ import data
 import model
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 
 ###############################################################################
 # Parsing command line arguments
@@ -255,7 +255,6 @@ best_val_loss = None  # best validation loss
 try:
     train_loss = list()
     valid_loss = list()
-    ct = 0
     for epoch in range(1, args.epochs + 1):
         epoch_start_time = time.time()  # start the time for the epoch run
         train_loss.append(train())  # call the training function and append the avg loss of epoch over batches in a list
@@ -275,10 +274,8 @@ try:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             lr /= 4.0
 
-        ct += 1
-        if ct >= 10:
-            break
-    plot_curves(train_loss, valid_loss, 10)
+
+    plot_curves(train_loss, valid_loss, args.epochs)
 except KeyboardInterrupt:
     print('-' * 89)
     print('Exiting from training early')
