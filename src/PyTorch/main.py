@@ -1,4 +1,5 @@
 # coding: utf-8
+from matplotlib import pyplot as plt
 import argparse
 import time
 import math
@@ -10,7 +11,7 @@ import data
 import model
 import matplotlib
 matplotlib.use('Agg')
-from matplotlib import pyplot as plt
+
 ###############################################################################
 # Parsing command line arguments
 ###############################################################################
@@ -152,8 +153,8 @@ def repackage_hidden(h):
 
 def plot_curves(tr_loss, val_loss, epochs):
     epochs_list = [i + 1 for i in range(epochs)]
-    plt.plot(tr_loss, epochs_list, color='blue', label="Training loss")
-    plt.plot(val_loss, epochs_list, color='green', label="Validation loss")
+    plt.plot(epochs_list, tr_loss, color='blue', label="Training loss")
+    plt.plot(epochs_list, val_loss, color='green', label="Validation loss")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.title("Train-Valid Loss Curves")
