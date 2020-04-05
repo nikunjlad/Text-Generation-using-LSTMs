@@ -8,8 +8,9 @@ import torch.nn as nn
 import torch.onnx
 import data
 import model
-import matplotlib.pyplot as plt
-
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 ###############################################################################
 # Parsing command line arguments
 ###############################################################################
