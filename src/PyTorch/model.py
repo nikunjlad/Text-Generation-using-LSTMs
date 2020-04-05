@@ -52,12 +52,12 @@ class RNNModel(nn.Module):
         self.decoder.weight.data.uniform_(-initrange, initrange)   # initialize decoder weights between -0.1 to 0.1
 
     def forward(self, input, hidden):
-        emb = self.drop(self.encoder(input))
-        output, hidden = self.rnn(emb, hidden)
-        output = self.drop(output)
-        decoded = self.decoder(output)
-        decoded = decoded.view(-1, self.ntoken)
-        return F.log_softmax(decoded, dim=1), hidden
+        emb = self.drop(self.encoder(input))   # take inputs in encoder and apply dropout on the encoder output
+        output, hidden = self.rnn(emb, hidden)    # now embedding size is 200 and hidden is 200 as well.
+        output = self.drop(output)    # apply dropout on the embedding output
+        decoded = self.decoder(output)  # decoding the dropped version of outputs.
+        decoded = decoded.view(-1, self.ntoken)   # flattening the decoded outputs to the token size
+        return F.log_softmax(decoded, dim=1), hidden   # applying the softmaxed outputs and hidden layers
 
     def init_hidden(self, bsz):
         weight = next(self.parameters())
@@ -88,7 +88,7 @@ class PositionalEncoding(nn.Module):
 
     def __init__(self, d_model, dropout=0.1, max_len=5000):
         super(PositionalEncoding, self).__init__()
-        self.dropout = nn.Dropout(p=dropout)
+        self.dropout = nn.Dropout(p=dropout)   # defining dropout layers with 10% default regularization
 
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)

@@ -1,5 +1,4 @@
 # coding: utf-8
-from matplotlib import pyplot as plt
 import argparse
 import time
 import math
@@ -11,6 +10,7 @@ import data
 import model
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib import pyplot as plt
 
 ###############################################################################
 # Parsing command line arguments
@@ -27,7 +27,7 @@ parser.add_argument('--nhid', type=int, default=200,
                     help='number of hidden units per layer')
 parser.add_argument('--nlayers', type=int, default=2,
                     help='number of layers')
-parser.add_argument('--lr', type=float, default=20,
+parser.add_argument('--lr', type=float, default=0.01,
                     help='initial learning rate')
 parser.add_argument('--clip', type=float, default=0.25,
                     help='gradient clipping')
@@ -252,15 +252,15 @@ lr = args.lr  # learning rate
 best_val_loss = None  # best validation loss
 
 # At any point you can hit Ctrl + C to break out of training early.
+train_loss = list()
+valid_loss = list()
+ct = 0
 try:
-    train_loss = list()
-    valid_loss = list()
-    ct = 0
     for epoch in range(1, args.epochs + 1):
         epoch_start_time = time.time()  # start the time for the epoch run
         train_loss.append(train())  # call the training function and append the avg loss of epoch over batches in a list
-        val_loss = evaluate(val_data)
-        valid_loss.append(val_loss)
+        val_loss = evaluate(val_data)   # calculate the validation loss
+        valid_loss.append(val_loss)  # append the validation loss in a list
         print('-' * 89)
         print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
               'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
@@ -269,19 +269,18 @@ try:
         # Save the model if the validation loss is the best we've seen so far.
         if not best_val_loss or val_loss < best_val_loss:
             with open(args.save, 'wb') as f:
-                torch.save(model, f)
-            best_val_loss = val_loss
+                torch.save(model, f)   # keep saving the best model as and when the validation loss falls below best loss
+            best_val_loss = val_loss   # new best loss is the recently found validation loss
         else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
             lr /= 4.0
-
         ct += 1
-        if ct >= 10:
-            break
-    plot_curves(train_loss, valid_loss, 10)
+    plot_curves(train_loss, valid_loss, args.epochs)   # plot the loss curves against the epochs
 except KeyboardInterrupt:
     print('-' * 89)
-    print('Exiting from training early')
+    print('Exiting from training early')     # on pressing Ctrl + C, early stop the model and exit training
+    ct = len(train_loss)
+    plot_curves(train_loss, valid_loss, ct)
 
 # Load the best saved model.
 with open(args.save, 'rb') as f:

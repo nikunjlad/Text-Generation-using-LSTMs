@@ -9,7 +9,8 @@ import argparse
 import torch
 import data
 
-parser = argparse.ArgumentParser(description='PyTorch Wikitext-2 Language Model')
+
+parser = argparse.ArgumentParser(description='PyTorch Paul Graham Language Model')
 
 # Model parameters.
 parser.add_argument('--data', type=str, default='./data/wikitext-2',
@@ -41,16 +42,20 @@ device = torch.device("cuda" if args.cuda else "cpu")
 if args.temperature < 1e-3:
     parser.error("--temperature has to be greater or equal 1e-3")
 
-with open(args.checkpoint, 'rb') as f:
-    model = torch.load(f).to(device)
-model.eval()
+with open(args.checkpoint, 'rb') as f:    # load the model checkpoint and read the file
+    model = torch.load(f).to(device)     # loading the model to device if GPU else CPU
+model.eval()    # evaluate the model
 
-corpus = data.Corpus(args.data)
-ntokens = len(corpus.dictionary)
+corpus = data.Corpus(args.data)    # load the data Corpus
+ntokens = len(corpus.dictionary)   # size of the vocabulary
 
+# check if the model is a Transformer model
 is_transformer_model = hasattr(model, 'model_type') and model.model_type == 'Transformer'
+
+# if model is not transformer model then initialize the hidden layers
 if not is_transformer_model:
     hidden = model.init_hidden(1)
+
 input = torch.randint(ntokens, (1, 1), dtype=torch.long).to(device)
 
 with open(args.outf, 'w') as outf:
@@ -68,8 +73,8 @@ with open(args.outf, 'w') as outf:
                 word_idx = torch.multinomial(word_weights, 1)[0]
                 input.fill_(word_idx)
 
+            # re map the predicted indices to the words and write it out in a text file
             word = corpus.dictionary.idx2word[word_idx]
-
             outf.write(word + ('\n' if i % 20 == 19 else ' '))
 
             if i % args.log_interval == 0:
