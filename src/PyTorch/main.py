@@ -64,7 +64,7 @@ if torch.cuda.is_available():
     if not args.cuda:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-device = torch.device("cuda" if args.cuda else "cpu")  # set to cuda if using cuda or use the cpu
+device = torch.device("cuda:3" if args.cuda else "cpu")  # set to cuda if using cuda or use the cpu
 
 ###############################################################################
 # Load data
